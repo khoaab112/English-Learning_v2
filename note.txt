@@ -1,0 +1,13 @@
+App tiếng anh bao gồm các chức năng
+
+ADMIN : quản trị tài khoản, người dùng, thêm kho từ vựng, các mode admin như thông báo cho toàn người dùng, thông báo cho một số người dùng , thông báo cho người dùng , nhắn tin cho người dùng ,
+
+CUSTOMER : 
+  -người dùng đăng nhập
+  - profile : có thể thay đổi thông tin người dùng , thay đổi password , setting một số quyền như số từ vựng học mỗi ngày bắt buộc là bao nhiêu
+  - test khả năng nghe - ghi chép lại: bằng cách nghe đoạn ghi âm rồi gõ lại , có các mức độ dễ đến khó , nó sẽ ứng với độ dài ghi âm ,cách thức chấm điểm không phải so sánh text quá khắt khe kiểu thừa thiếu một số chữ , có một số khoảng trắng gì đó , sẽ chỉ ra họ đang sai hay thiếu chỗ nào
+  - test khả năng nghe - dịch sang tiếng việt : cài này thì có thể tích hợp AI để so sánh nghĩa , vì so sánh văn bản theo nghĩa thì rất khó
+  - test khả năng đọc - gõ lại bằng tiếng việt
+
+
+
