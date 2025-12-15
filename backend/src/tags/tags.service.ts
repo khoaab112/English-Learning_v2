@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, ConflictException, InternalServerErrorException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Tag } from './entities/tag.entity';
@@ -10,8 +10,15 @@ export class TagsService {
         private tagsRepository: Repository<Tag>,
     ) { }
 
-    create(createTagDto: Partial<Tag>) {
-        return this.tagsRepository.save(createTagDto);
+    async create(createTagDto: Partial<Tag>) {
+        try {
+            return await this.tagsRepository.save(createTagDto);
+        } catch (error) {
+            if (error.code === 'ER_DUP_ENTRY') {
+                throw new ConflictException('Tag này đã tồn tại.');
+            }
+            throw new InternalServerErrorException();
+        }
     }
 
     findAll() {

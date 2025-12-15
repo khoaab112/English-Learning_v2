@@ -108,14 +108,14 @@
                 <td>
                     <!-- Updated Tag Loop -->
                     <div class="d-flex flex-wrap gap-1" style="max-width: 200px;">
-                        <span v-for="tag in (word.tags || [])" :key="tag.id" class="badge bg-secondary-subtle text-secondary border border-secondary-subtle" :title="tag.note">#{{ tag.name }}</span>
+                        <span v-for="tag in (word.tags || [])" :key="tag.id" class="badge border" :class="getTagColor(tag.id)" :title="tag.note">#{{ tag.name }}</span>
                     </div>
                 </td>
                 <td class="text-end pe-4">
                   <button @click="editWord(word)" class="btn btn-sm btn-link text-primary p-0 me-3" title="Sửa">
                     <i class="fas fa-edit"></i>
                   </button>
-                  <button @click="deleteWord(word.id)" class="btn btn-sm btn-link text-danger p-0" title="Xóa">
+                  <button @click="deleteWord(word.id!)" class="btn btn-sm btn-link text-danger p-0" title="Xóa">
                     <i class="fas fa-trash-alt"></i>
                   </button>
                 </td>
@@ -175,17 +175,17 @@
                                 </div>
                              </div>
                          </div>
-                         <div class="list-group list-group-flush border-top">
-                             <div v-for="tag in allTags" :key="tag.id" class="list-group-item d-flex justify-content-between align-items-center py-2 px-0">
-                                 <div>
-                                     <span class="fw-bold">#{{ tag.name }}</span>
-                                     <small class="text-muted ms-2" v-if="tag.note">({{ tag.note }})</small>
+                         <div class="d-flex flex-wrap gap-2 border-top pt-3" style="max-height: 300px; overflow-y: auto;">
+                             <div v-for="tag in allTags" :key="tag.id" class="border p-2 rounded-3 d-flex align-items-center shadow-sm" :class="getTagColor(tag.id)" style="border-radius: 8px !important;">
+                                 <div class="me-2">
+                                     <span class="fw-bold">{{ tag.name }}</span>
+                                     <!-- <small class="text-muted d-block small" v-if="tag.note" style="font-size: 0.75rem;">{{ tag.note }}</small> -->
                                  </div>
-                                 <button class="btn btn-sm btn-outline-danger border-0" @click="deleteTag(tag.id!)">
+                                 <button class="btn btn-sm btn-link text-danger p-0 ms-2" @click="deleteTag(tag.id!)" title="Xóa">
                                      <i class="fas fa-times"></i>
                                  </button>
                              </div>
-                             <div v-if="allTags.length === 0" class="text-center text-muted py-3">Chưa có tag nào</div>
+                             <div v-if="allTags.length === 0" class="w-100 text-center text-muted py-3">Chưa có tag nào</div>
                          </div>
                     </div>
                 </div>
@@ -196,128 +196,180 @@
     <!-- Word Modal (Tab 3 Updated) -->
     <Teleport to="body">
         <div class="modal fade" id="vocabularyModal" tabindex="-1" aria-hidden="true" ref="modalElement">
-        <!-- ... (Same as before until Tab 3) ... -->
         <div class="modal-dialog modal-dialog-centered modal-lg">
             <div class="modal-content border-0 shadow">
+            
+            <!-- Modal Header -->
             <div class="modal-header border-bottom-0 pb-0">
-                <h5 class="modal-title fw-bold">{{ isEditing ? 'Cập nhật từ vựng' : 'Thêm từ mới' }}</h5>
+                <div class="d-flex align-items-center">
+                    <button v-if="creationMode === 'MANUAL' && !isEditing" @click="creationMode = 'SELECT'" class="btn btn-sm btn-light me-2 rounded-circle" title="Quay lại">
+                        <i class="fas fa-arrow-left"></i>
+                    </button>
+                    <h5 class="modal-title fw-bold">
+                        {{ 
+                            creationMode === 'SELECT' ? 'Chọn cách thêm từ' : 
+                            (isEditing ? 'Cập nhật từ vựng' : 'Thêm từ mới thủ công') 
+                        }}
+                    </h5>
+                </div>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
             </div>
+
+            <!-- Modal Body -->
             <div class="modal-body">
-                <ul class="nav nav-tabs nav-fill mb-3" id="vocabTabs" role="tablist">
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link active fw-bold small" id="general-tab" data-bs-toggle="tab" data-bs-target="#general" type="button" role="tab" aria-controls="general" aria-selected="true">
-                            Thông Tin Chung
-                        </button>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link fw-bold small" id="details-tab" data-bs-toggle="tab" data-bs-target="#details" type="button" role="tab" aria-controls="details" aria-selected="false">
-                            Ví Dụ & Ghi Chú
-                        </button>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link fw-bold small" id="media-tab" data-bs-toggle="tab" data-bs-target="#media" type="button" role="tab" aria-controls="media" aria-selected="false">
-                            Media & Tags
-                        </button>
-                    </li>
-                </ul>
-
-                <form @submit.prevent="saveWord">
-                    <div class="tab-content" id="myTabContent">
-                        <!-- Tab 1: General Info (Same) -->
-                        <div class="tab-pane fade show active" id="general" role="tabpanel" aria-labelledby="general-tab">
-                             <div class="row g-3">
-                                <div class="col-md-6">
-                                    <label class="form-label text-muted small fw-bold">Từ Tiếng Anh <span class="text-danger">*</span></label>
-                                    <input v-model="form.word" class="form-control" placeholder="VD: Opportunity" required />
+                
+                <!-- MODE SELECTION -->
+                <div v-if="creationMode === 'SELECT'" class="row g-4 py-4 px-2">
+                    <div class="col-md-6">
+                        <div class="card h-100 border text-center p-4 hover-card cursor-pointer" @click="creationMode = 'MANUAL'">
+                            <div class="card-body">
+                                <div class="bg-primary-subtle text-primary rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
+                                    <i class="fas fa-pen-fancy fa-2x"></i>
                                 </div>
-                                <div class="col-md-6">
-                                    <label class="form-label text-muted small fw-bold">Phiên Âm (IPA)</label>
-                                    <input v-model="form.ipa" class="form-control font-monospace" placeholder="/ˌɒpəˈtjuːnəti/" />
-                                </div>
-                                <div class="col-12">
-                                    <label class="form-label text-muted small fw-bold">Nghĩa Tiếng Việt <span class="text-danger">*</span></label>
-                                    <input v-model="form.meaning" class="form-control" placeholder="Cơ hội, thời cơ" required />
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label text-muted small fw-bold">Loại Từ</label>
-                                    <select v-model="form.type" class="form-select">
-                                        <option value="n">Noun (n)</option>
-                                        <option value="v">Verb (v)</option>
-                                        <option value="adj">Adjective (adj)</option>
-                                        <option value="adv">Adverb (adv)</option>
-                                        <option value="prep">Preposition</option>
-                                        <option value="conj">Conjunction</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label text-muted small fw-bold">Level</label>
-                                    <select v-model="form.level" class="form-select">
-                                        <option value="A1">A1 - Beginner</option>
-                                        <option value="A2">A2 - Elementary</option>
-                                        <option value="B1">B1 - Intermediate</option>
-                                        <option value="B2">B2 - Upper Intermediate</option>
-                                        <option value="C1">C1 - Advanced</option>
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Tab 2: Details (Same) -->
-                        <div class="tab-pane fade" id="details" role="tabpanel" aria-labelledby="details-tab">
-                             <div class="mb-3">
-                                <label class="form-label text-muted small fw-bold">Câu Ví Dụ (EN)</label>
-                                <textarea v-model="form.example" class="form-control" rows="2" placeholder="He seized the opportunity to speak."></textarea>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label text-muted small fw-bold">Dịch Nghĩa Ví Dụ (VN)</label>
-                                <textarea v-model="form.exampleMeaning" class="form-control" rows="2" placeholder="Anh ấy nắm lấy cơ hội để phát biểu."></textarea>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label text-muted small fw-bold">Ghi Chú Sử Dụng (Usage Note)</label>
-                                <textarea v-model="form.usageNote" class="form-control" rows="2" placeholder="Thường dùng với động từ 'make', 'seize' ..."></textarea>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label text-muted small fw-bold">Collocation (Cụm từ đi kèm)</label>
-                                <input v-model="form.collocation" class="form-control" placeholder="miss an opportunity, golden opportunity" />
-                            </div>
-                        </div>
-
-                        <!-- Tab 3: Media & Metadata (Updated with Checkboxes) -->
-                        <div class="tab-pane fade" id="media" role="tabpanel" aria-labelledby="media-tab">
-                            <div class="mb-3">
-                                <label class="form-label text-muted small fw-bold">Hình Ảnh (URL)</label>
-                                <input v-model="form.imageUrl" class="form-control" placeholder="https://example.com/image.jpg" />
-                                <div v-if="form.imageUrl" class="mt-2">
-                                    <img :src="form.imageUrl" class="img-thumbnail" style="height: 80px;" alt="Preview">
-                                </div>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label text-muted small fw-bold">Âm Thanh (URL / MP3)</label>
-                                <input v-model="form.audioUrl" class="form-control" placeholder="https://example.com/audio.mp3" />
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label text-muted small fw-bold mb-2">Tags (Chọn nhiều)</label>
-                                <div class="card p-2 bg-light" style="max-height: 150px; overflow-y: auto;">
-                                    <div v-for="tag in allTags" :key="tag.id" class="form-check">
-                                        <input class="form-check-input" type="checkbox" :value="tag.id" :id="'tag-'+tag.id" v-model="selectedTagIds">
-                                        <label class="form-check-label w-100" :for="'tag-'+tag.id">
-                                            #{{ tag.name }} <small class="text-muted" v-if="tag.note">- {{ tag.note }}</small>
-                                        </label>
-                                    </div>
-                                    <div v-if="allTags.length === 0" class="text-muted small text-center my-2">
-                                        Chưa có tag nào. Vui lòng tạo tag ở màn hình chính.
-                                    </div>
-                                </div>
+                                <h5 class="fw-bold">Thủ Công</h5>
+                                <p class="text-muted small">Nhập chi tiết từng trường thông tin cho một từ vựng mới.</p>
                             </div>
                         </div>
                     </div>
-
-                    <div class="modal-footer border-top-0 px-0 pb-0 mt-3">
-                        <button type="button" class="btn btn-light text-muted" data-bs-dismiss="modal">Hủy</button>
-                        <button type="submit" class="btn btn-primary px-4">{{ isEditing ? 'Cập Nhật' : 'Lưu Từ Mới' }}</button>
+                    <div class="col-md-6">
+                        <div class="card h-100 border text-center p-4 hover-card cursor-pointer" @click="creationMode = 'TEMPLATE'"> 
+                             <!-- Future: Implement Template Mode -->
+                            <div class="card-body">
+                                <div class="bg-success-subtle text-success rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
+                                    <i class="fas fa-magic fa-2x"></i>
+                                </div>
+                                <h5 class="fw-bold">Dùng Template</h5>
+                                <p class="text-muted small">Sử dụng mẫu có sẵn để tạo từ vựng nhanh chóng (Sắp ra mắt).</p>
+                            </div>
+                        </div>
                     </div>
-                </form>
+                </div>
+                
+                <!-- TEMPLATE PLACEHOLDER -->
+                <div v-else-if="creationMode === 'TEMPLATE'" class="text-center py-5">
+                    <div class="text-muted mb-3"><i class="fas fa-tools fa-3x"></i></div>
+                    <h5>Tính năng đang phát triển</h5>
+                    <button class="btn btn-outline-primary mt-2" @click="creationMode = 'SELECT'">Quay lại</button>
+                </div>
+
+                <!-- MANUAL FORM (Key Existing Logic) -->
+                <div v-else-if="creationMode === 'MANUAL'">
+                    <ul class="nav nav-tabs nav-fill mb-3" id="vocabTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active fw-bold small" id="general-tab" data-bs-toggle="tab" data-bs-target="#general" type="button" role="tab" aria-controls="general" aria-selected="true">
+                                Thông Tin Chung
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link fw-bold small" id="details-tab" data-bs-toggle="tab" data-bs-target="#details" type="button" role="tab" aria-controls="details" aria-selected="false">
+                                Ví Dụ & Ghi Chú
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link fw-bold small" id="media-tab" data-bs-toggle="tab" data-bs-target="#media" type="button" role="tab" aria-controls="media" aria-selected="false">
+                                Media & Tags
+                            </button>
+                        </li>
+                    </ul>
+
+                    <form @submit.prevent="saveWord">
+                        <div class="tab-content" id="myTabContent">
+                            <!-- Tab 1: General Info (Same) -->
+                            <div class="tab-pane fade show active" id="general" role="tabpanel" aria-labelledby="general-tab">
+                                 <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label text-muted small fw-bold">Từ Tiếng Anh <span class="text-danger">*</span></label>
+                                        <input v-model="form.word" class="form-control" placeholder="VD: Opportunity" required />
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label text-muted small fw-bold">Phiên Âm (IPA)</label>
+                                        <input v-model="form.ipa" class="form-control font-monospace" placeholder="/ˌɒpəˈtjuːnəti/" />
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="form-label text-muted small fw-bold">Nghĩa Tiếng Việt <span class="text-danger">*</span></label>
+                                        <input v-model="form.meaning" class="form-control" placeholder="Cơ hội, thời cơ" required />
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label text-muted small fw-bold">Loại Từ</label>
+                                        <select v-model="form.type" class="form-select">
+                                            <option value="n">Noun (n)</option>
+                                            <option value="v">Verb (v)</option>
+                                            <option value="adj">Adjective (adj)</option>
+                                            <option value="adv">Adverb (adv)</option>
+                                            <option value="prep">Preposition</option>
+                                            <option value="conj">Conjunction</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label text-muted small fw-bold">Level</label>
+                                        <select v-model="form.level" class="form-select">
+                                            <option value="A1">A1 - Beginner</option>
+                                            <option value="A2">A2 - Elementary</option>
+                                            <option value="B1">B1 - Intermediate</option>
+                                            <option value="B2">B2 - Upper Intermediate</option>
+                                            <option value="C1">C1 - Advanced</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Tab 2: Details (Same) -->
+                            <div class="tab-pane fade" id="details" role="tabpanel" aria-labelledby="details-tab">
+                                 <div class="mb-3">
+                                    <label class="form-label text-muted small fw-bold">Câu Ví Dụ (EN)</label>
+                                    <textarea v-model="form.example" class="form-control" rows="2" placeholder="He seized the opportunity to speak."></textarea>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label text-muted small fw-bold">Dịch Nghĩa Ví Dụ (VN)</label>
+                                    <textarea v-model="form.exampleMeaning" class="form-control" rows="2" placeholder="Anh ấy nắm lấy cơ hội để phát biểu."></textarea>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label text-muted small fw-bold">Ghi Chú Sử Dụng (Usage Note)</label>
+                                    <textarea v-model="form.usageNote" class="form-control" rows="2" placeholder="Thường dùng với động từ 'make', 'seize' ..."></textarea>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label text-muted small fw-bold">Collocation (Cụm từ đi kèm)</label>
+                                    <input v-model="form.collocation" class="form-control" placeholder="miss an opportunity, golden opportunity" />
+                                </div>
+                            </div>
+
+                            <!-- Tab 3: Media & Metadata (Updated with Checkboxes) -->
+                            <div class="tab-pane fade" id="media" role="tabpanel" aria-labelledby="media-tab">
+                                <div class="mb-3">
+                                    <label class="form-label text-muted small fw-bold">Hình Ảnh (URL)</label>
+                                    <input v-model="form.imageUrl" class="form-control" placeholder="https://example.com/image.jpg" />
+                                    <div v-if="form.imageUrl" class="mt-2">
+                                        <img :src="form.imageUrl" class="img-thumbnail" style="height: 80px;" alt="Preview">
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label text-muted small fw-bold">Âm Thanh (URL / MP3)</label>
+                                    <input v-model="form.audioUrl" class="form-control" placeholder="https://example.com/audio.mp3" />
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label text-muted small fw-bold mb-2">Tags (Chọn nhiều)</label>
+                                    <div class="card p-2 bg-light" style="max-height: 150px; overflow-y: auto;">
+                                        <div v-for="tag in allTags" :key="tag.id" class="form-check">
+                                            <input class="form-check-input" type="checkbox" :value="tag.id" :id="'tag-'+tag.id" v-model="selectedTagIds">
+                                            <label class="form-check-label w-100" :for="'tag-'+tag.id">
+                                                <span class="badge" :class="getTagColor(tag.id)">{{ tag.name }}</span>
+                                                <!-- <small class="text-muted" v-if="tag.note"> {{ tag.note }}</small> -->
+                                            </label>
+                                        </div>
+                                        <div v-if="allTags.length === 0" class="text-muted small text-center my-2">
+                                            Chưa có tag nào. Vui lòng tạo tag ở màn hình chính.
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="modal-footer border-top-0 px-0 pb-0 mt-3">
+                            <button type="button" class="btn btn-light text-muted" data-bs-dismiss="modal">Hủy</button>
+                            <button type="submit" class="btn btn-primary px-4">{{ isEditing ? 'Cập Nhật' : 'Lưu Từ Mới' }}</button>
+                        </div>
+                    </form>
+                </div>
             </div>
             </div>
         </div>
@@ -327,7 +379,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 import { Modal, Tab } from 'bootstrap';
 import axios from 'axios';
 import CommonSearch from '../../components/common/CommonSearch.vue';
@@ -362,12 +414,12 @@ const selectedLevel = ref('');
 const loading = ref(false);
 
 const isEditing = ref(false);
+const creationMode = ref<'SELECT' | 'MANUAL' | 'TEMPLATE'>('SELECT'); // NEW: Mode Selection
 const form = ref<Vocabulary>({
     word: '', ipa: '', meaning: '', type: 'n', level: 'A1', 
     example: '', exampleMeaning: '', audioUrl: '', imageUrl: '', 
     usageNote: '', collocation: '', tags: [], popularity: 0
 });
-const tagsInput = ref(''); // No longer used for input, maybe for search filter? kept for compatibility or remove
 
 const modalElement = ref<HTMLElement | null>(null);
 let modalInstance: Modal | null = null;
@@ -382,7 +434,6 @@ interface Tag {
 }
 
 const allTags = ref<Tag[]>([]);
-const isManageTagsOpen = ref(false);
 const tagForm = ref<Tag>({ name: '', note: '' });
 
 import { useAuthStore } from '../../stores/auth';
@@ -390,6 +441,22 @@ import { useToastStore } from '../../stores/toast';
 
 const authStore = useAuthStore();
 const toastStore = useToastStore();
+
+// Tag Colors
+const tagColors = [
+    'bg-primary-subtle text-primary-emphasis border-primary-subtle',
+    'bg-success-subtle text-success-emphasis border-success-subtle',
+    'bg-danger-subtle text-danger-emphasis border-danger-subtle',
+    'bg-warning-subtle text-warning-emphasis border-warning-subtle',
+    'bg-info-subtle text-info-emphasis border-info-subtle',
+    'bg-dark-subtle text-dark-emphasis border-dark-subtle',
+    'bg-secondary-subtle text-secondary-emphasis border-secondary-subtle'
+];
+
+const getTagColor = (id?: number) => {
+    if (!id) return tagColors[6];
+    return tagColors[id % tagColors.length];
+};
 
 // ...
 
@@ -497,6 +564,7 @@ const selectedTagIds = ref<number[]>([]);
 
 const openModal = () => {
     isEditing.value = false;
+    creationMode.value = 'SELECT';
     form.value = {
         word: '', ipa: '', meaning: '', type: 'n', level: 'A1', 
         example: '', exampleMeaning: '', audioUrl: '', imageUrl: '', 
@@ -505,7 +573,7 @@ const openModal = () => {
     selectedTagIds.value = []; // Reset selection
     
     if (modalElement.value) {
-        resetTabs();
+        // resetTabs(); // No tabs in SELECT mode
         modalInstance = Modal.getOrCreateInstance(modalElement.value);
         modalInstance.show();
     }
@@ -513,12 +581,13 @@ const openModal = () => {
 
 const editWord = (word: Vocabulary) => {
     isEditing.value = true;
+    creationMode.value = 'MANUAL';
     form.value = { ...word }; 
     // Map existing tags objects to their IDs for the checkbox group
     selectedTagIds.value = (word.tags || []).map(t => t.id!);
     
     if (modalElement.value) {
-        resetTabs();
+        setTimeout(() => resetTabs(), 0);
         modalInstance = Modal.getOrCreateInstance(modalElement.value);
         modalInstance.show();
     }
