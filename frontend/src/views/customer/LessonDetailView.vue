@@ -101,7 +101,7 @@ const errorCount = ref(0);
 
 const fetchLesson = async () => {
   try {
-    const response = await axios.get(`http://localhost:3000/lessons/${route.params.id}`, {
+    const response = await axios.get(`${import.meta.env.VITE_API_URL}/lessons/${route.params.id}`, {
       headers: { Authorization: `Bearer ${authStore.token}` }
     });
     lesson.value = response.data;
@@ -147,6 +147,25 @@ const checkResult = () => {
   // This is rough but okay for MVP.
   const totalWords = original.split(/\s+/).length;
   accuracy.value = Math.max(0, Math.round(((totalWords - errors) / totalWords) * 100));
+
+  // Save attempt to backend
+  saveAttempt();
+};
+
+const saveAttempt = async () => {
+  try {
+    await axios.post(`${import.meta.env.VITE_API_URL}/attempts`, {
+      lessonId: lesson.value.id,
+      score: accuracy.value,
+      userText: userInput.value,
+      feedback: { errorCount: errorCount.value }
+    }, {
+      headers: { Authorization: `Bearer ${authStore.token}` }
+    });
+    // Optional: Toast message
+  } catch (error) {
+    console.error('Lỗi lưu kết quả:', error);
+  }
 };
 
 const retry = () => {

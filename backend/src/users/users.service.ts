@@ -20,11 +20,17 @@ export class UsersService implements OnApplicationBootstrap {
   }
 
   async seedAdmin() {
-    const adminEmail = 'admin@example.com';
+    const adminEmail = this.configService.get<string>('ADMIN_EMAIL');
+    const adminPassword = this.configService.get<string>('ADMIN_PASSWORD');
+
+    if (!adminEmail || !adminPassword) {
+      console.warn('ADMIN_EMAIL or ADMIN_PASSWORD not set. Skipping admin seed.');
+      return;
+    }
     const adminExists = await this.userRepository.findOneBy({ email: adminEmail });
     if (!adminExists) {
       console.log('Seeding admin account...');
-      const password = await bcrypt.hash('admin123', 10);
+      const password = await bcrypt.hash(adminPassword, 10);
       const admin = this.userRepository.create({
         email: adminEmail,
         password: password,
@@ -65,6 +71,8 @@ export class UsersService implements OnApplicationBootstrap {
       .take(limit);
 
     const [data, total] = await queryBuilder.getManyAndCount();
+
+    return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
 
     return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
   }

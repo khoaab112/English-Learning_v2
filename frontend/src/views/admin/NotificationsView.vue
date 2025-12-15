@@ -84,7 +84,7 @@ const form = ref({
 const sendNotification = async () => {
   loading.value = true;
   try {
-    await axios.post('http://localhost:3000/notifications', form.value, {
+    await axios.post(`${import.meta.env.VITE_API_URL}/notifications`, form.value, {
       headers: { Authorization: `Bearer ${authStore.token}` }
     });
     alert('Đã gửi thông báo thành công!');

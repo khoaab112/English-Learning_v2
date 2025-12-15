@@ -14,7 +14,7 @@ import { NotificationsModule } from './notifications/notifications.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
-      envFilePath: '../.env',
+      envFilePath: ['.env'],
       isGlobal: true,
     }),
     ServeStaticModule.forRoot({
@@ -23,16 +23,33 @@ import { NotificationsModule } from './notifications/notifications.module';
     }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
-      useFactory: async (configService: ConfigService) => ({
-        type: 'mysql',
-        host: 'localhost',
-        port: parseInt(configService.get<string>('MYSQL_PORT') || '3306', 10),
-        username: configService.get<string>('MYSQL_USER') || 'root',
-        password: configService.get<string>('MYSQL_PASSWORD') || '',
-        database: configService.get<string>('MYSQL_DATABASE') || 'test',
-        entities: [__dirname + '/**/*.entity{.ts,.js}'],
-        synchronize: true, // Use migrations in production, but true for dev speed
-      }),
+      useFactory: async (configService: ConfigService) => {
+        const requiredKeys = [
+          'MYSQL_HOST',
+          'MYSQL_PORT',
+          'MYSQL_USER',
+          'MYSQL_PASSWORD',
+          'MYSQL_DATABASE',
+        ];
+
+        for (const key of requiredKeys) {
+          if (!configService.get(key)) {
+            throw new Error(`MISSING CONFIGURATION: ${key} is not defined in .env file`);
+          }
+        }
+
+        const config = {
+          type: 'mysql',
+          host: configService.get<string>('MYSQL_HOST')!,
+          port: parseInt(configService.get<string>('MYSQL_PORT')!, 10),
+          username: configService.get<string>('MYSQL_USER')!,
+          password: configService.get<string>('MYSQL_PASSWORD')!,
+          database: configService.get<string>('MYSQL_DATABASE')!,
+          entities: [__dirname + '/**/*.entity{.ts,.js}'],
+          synchronize: true,
+        };
+        return config as any;
+      },
       inject: [ConfigService],
     }),
     UsersModule,

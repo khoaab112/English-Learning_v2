@@ -397,13 +397,22 @@ const handleFileChange = (event: any) => {
 const fetchUsers = async (page: number = 1) => {
   loading.value = true;
   try {
-    const response = await axios.get(`http://localhost:3000/users?page=${page}&limit=20&search=${searchQuery.value}`, {
+    const response = await axios.get(`${import.meta.env.VITE_API_URL}/users?page=${page}&limit=20&search=${searchQuery.value}`, {
       headers: { Authorization: `Bearer ${authStore.token}` }
     });
-    // Response structure now: { data: [], total: number, page: number, totalPages: number }
-    users.value = response.data.data;
-    currentPage.value = response.data.page;
-    totalPages.value = response.data.totalPages;
+    
+    // Safely handle response structure (paginated or flat)
+    if (response.data && Array.isArray(response.data.data)) {
+        users.value = response.data.data;
+        currentPage.value = response.data.page;
+        totalPages.value = response.data.totalPages;
+    } else if (Array.isArray(response.data)) {
+        // Fallback for flat array response
+        users.value = response.data;
+    } else {
+        console.warn('Unexpected API response format:', response.data);
+        users.value = [];
+    }
   } catch (error) {
     console.error('Error fetching users:', error);
     toastStore.error('Không thể tải danh sách người dùng.');
@@ -482,12 +491,12 @@ const handleSubmit = async () => {
 
   try {
       if (isEditing.value && editingId.value) {
-          await axios.patch(`http://localhost:3000/users/${editingId.value}`, formData, {
+          await axios.patch(`${import.meta.env.VITE_API_URL}/users/${editingId.value}`, formData, {
               headers: { Authorization: `Bearer ${authStore.token}` }
           });
           toastStore.success('Cập nhật người dùng thành công!');
       } else {
-          await axios.post('http://localhost:3000/users', formData, {
+          await axios.post(`${import.meta.env.VITE_API_URL}/users`, formData, {
                headers: { Authorization: `Bearer ${authStore.token}` }
           });
           toastStore.success('Tạo người dùng mới thành công!');
@@ -536,7 +545,7 @@ const confirmBlockUser = async () => {
     const newStatus = selectedUser.value.status === 'BLOCKED' ? 'ACTIVE' : 'BLOCKED';
     
     try {
-        await axios.patch(`http://localhost:3000/users/${selectedUser.value.id}/status`, { status: newStatus }, {
+        await axios.patch(`${import.meta.env.VITE_API_URL}/users/${selectedUser.value.id}/status`, { status: newStatus }, {
             headers: { Authorization: `Bearer ${authStore.token}` }
         });
         toastStore.success(`Đã ${blockAction.value} người dùng thành công.`);
@@ -563,7 +572,7 @@ const sendMessage = async () => {
     loading.value = true;
     try {
         // Assuming there is a notifications endpoint
-        await axios.post('http://localhost:3000/notifications', {
+        await axios.post(`${import.meta.env.VITE_API_URL}/notifications`, {
             receiverId: selectedUser.value.id,
             title: 'Tin nhắn từ Quản trị viên',
             message: messageContent.value,
@@ -587,7 +596,7 @@ const sendMessage = async () => {
 const deleteUser = async (id: number) => {
   if (!confirm('Bạn có chắc chắn muốn xóa người dùng này?')) return;
   try {
-    await axios.delete(`http://localhost:3000/users/${id}`, {
+    await axios.delete(`${import.meta.env.VITE_API_URL}/users/${id}`, {
         headers: { Authorization: `Bearer ${authStore.token}` }
     });
     toastStore.success('Đã xóa người dùng.');

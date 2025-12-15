@@ -40,7 +40,7 @@ const authStore = useAuthStore();
 
 const fetchNotifications = async () => {
   try {
-    const response = await axios.get('http://localhost:3000/notifications/my', {
+    const response = await axios.get(`${import.meta.env.VITE_API_URL}/notifications/my`, {
       headers: { Authorization: `Bearer ${authStore.token}` }
     });
     notifications.value = response.data;
@@ -51,7 +51,7 @@ const fetchNotifications = async () => {
 
 const markRead = async (id: number) => {
   try {
-    await axios.patch(`http://localhost:3000/notifications/${id}/read`, {}, {
+    await axios.patch(`${import.meta.env.VITE_API_URL}/notifications/${id}/read`, {}, {
       headers: { Authorization: `Bearer ${authStore.token}` }
     });
     // Update local state

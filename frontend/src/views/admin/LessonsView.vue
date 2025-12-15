@@ -130,7 +130,7 @@ let modalInstance: Modal | null = null;
 
 const fetchLessons = async () => {
   try {
-    const response = await axios.get('http://localhost:3000/lessons', {
+    const response = await axios.get(`${import.meta.env.VITE_API_URL}/lessons`, {
          headers: { Authorization: `Bearer ${authStore.token}` }
     });
     lessons.value = response.data;
@@ -149,7 +149,7 @@ const openModal = () => {
 
 const createLesson = async () => {
   try {
-    await axios.post('http://localhost:3000/lessons', newLesson.value, {
+    await axios.post(`${import.meta.env.VITE_API_URL}/lessons`, newLesson.value, {
          headers: { Authorization: `Bearer ${authStore.token}` }
     });
     // Close modal
@@ -169,7 +169,7 @@ const createLesson = async () => {
 const deleteLesson = async (id: number) => {
   if (!confirm('Bạn có chắc chắn muốn xóa bài học này?')) return;
   try {
-    await axios.delete(`http://localhost:3000/lessons/${id}`, {
+    await axios.delete(`${import.meta.env.VITE_API_URL}/lessons/${id}`, {
          headers: { Authorization: `Bearer ${authStore.token}` }
     });
     fetchLessons();

@@ -1,14 +1,17 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Request } from '@nestjs/common';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { AttemptsService } from './attempts.service';
 import { CreateAttemptDto } from './dto/create-attempt.dto';
 import { UpdateAttemptDto } from './dto/update-attempt.dto';
 
 @Controller('attempts')
 export class AttemptsController {
-  constructor(private readonly attemptsService: AttemptsService) {}
+  constructor(private readonly attemptsService: AttemptsService) { }
 
   @Post()
-  create(@Body() createAttemptDto: CreateAttemptDto) {
+  @UseGuards(JwtAuthGuard)
+  create(@Body() createAttemptDto: CreateAttemptDto, @Request() req) {
+    createAttemptDto.userId = req.user.userId;
     return this.attemptsService.create(createAttemptDto);
   }
 
