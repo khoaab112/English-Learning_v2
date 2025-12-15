@@ -38,7 +38,7 @@
                 <th>Người Dùng</th>
                 <th>Vai Trò</th>
                 <th>Trạng Thái</th>
-                <th>Ngày Tạo / Cập Nhật</th>
+                <th class="text-center">Thời gian</th>
                 <th class="text-center">Thao Tác</th>
               </tr>
             </thead>

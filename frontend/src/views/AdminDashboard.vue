@@ -15,6 +15,9 @@
         <router-link to="/admin/users" class="sidebar-link">
           <i class="fas fa-users w-25 text-center"></i> Người dùng
         </router-link>
+        <router-link to="/admin/vocabulary" class="sidebar-link">
+          <i class="fas fa-spell-check w-25 text-center"></i> Từ vựng
+        </router-link>
         <router-link to="/admin/lessons" class="sidebar-link">
           <i class="fas fa-book-open w-25 text-center"></i> Bài học
         </router-link>

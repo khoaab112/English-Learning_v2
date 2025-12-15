@@ -34,6 +34,9 @@ export class User {
     @Column({ default: 'ACTIVE' }) // ACTIVE, BLOCKED
     status: string;
 
+    @Column({ type: 'text', nullable: true })
+    refreshToken: string | null;
+
     @OneToMany(() => Attempt, (attempt) => attempt.user)
     attempts: Attempt[];
 

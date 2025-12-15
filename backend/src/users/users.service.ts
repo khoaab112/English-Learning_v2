@@ -1,4 +1,4 @@
-import { Injectable, OnApplicationBootstrap, ConflictException, BadRequestException } from '@nestjs/common';
+import { Injectable, OnApplicationBootstrap, ConflictException, BadRequestException, Inject } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -6,6 +6,8 @@ import { User, UserRole } from './entities/user.entity';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { ConfigService } from '@nestjs/config';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import type { Cache } from 'cache-manager';
 
 @Injectable()
 export class UsersService implements OnApplicationBootstrap {
@@ -13,6 +15,7 @@ export class UsersService implements OnApplicationBootstrap {
     @InjectRepository(User)
     private userRepository: Repository<User>,
     private configService: ConfigService,
+    @Inject(CACHE_MANAGER) private cacheManager: Cache,
   ) { }
 
   async onApplicationBootstrap() {
@@ -73,17 +76,29 @@ export class UsersService implements OnApplicationBootstrap {
     const [data, total] = await queryBuilder.getManyAndCount();
 
     return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
-
-    return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
   }
 
   async updateStatus(id: number, status: string) {
     const user = await this.findOne(id);
-    if (!user) throw new BadRequestException('Người dùng không tồn tại.'); // Optional safety
+    if (!user) throw new BadRequestException('Người dùng không tồn tại.');
     if (user.role === 'ADMIN') {
       throw new BadRequestException('Không thể chặn tài khoản Quản trị viên (Admin).');
     }
-    return this.userRepository.update(id, { status });
+
+    if (status === 'BLOCKED') {
+      // 1. Blacklist in Redis (30 mins = 1800s) to block Access Token immediately
+      await this.cacheManager.set(`blacklist:user:${id}`, true, 1800000); // 30m in ms (v5) or seconds dependent on version. Usually ms in v5.
+      // NestJS cache-manager v5 usually uses milliseconds. 30 * 60 * 1000 = 1800000.
+
+      // 2. Clear Refresh Token in DB
+      await this.userRepository.update(id, { status, refreshToken: null });
+    } else {
+      // Unblock: Remove from blacklist
+      await this.cacheManager.del(`blacklist:user:${id}`);
+      await this.userRepository.update(id, { status });
+    }
+
+    return { message: 'Cập nhật trạng thái thành công' };
   }
 
   findOne(id: number) {

@@ -32,6 +32,11 @@ const router = createRouter({
                     path: 'notifications',
                     name: 'admin-notifications',
                     component: () => import('../views/admin/NotificationsView.vue')
+                },
+                {
+                    path: 'vocabulary',
+                    name: 'admin-vocabulary',
+                    component: () => import('../views/admin/VocabularyView.vue')
                 }
             ]
         },

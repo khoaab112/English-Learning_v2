@@ -10,12 +10,28 @@ import { LessonsModule } from './lessons/lessons.module';
 import { AttemptsModule } from './attempts/attempts.module';
 import { AuthModule } from './auth/auth.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { VocabulariesModule } from './vocabularies/vocabularies.module';
+import { TagsModule } from './tags/tags.module';
+
+import { CacheModule } from '@nestjs/cache-manager';
+import * as redisStore from 'cache-manager-redis-store';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       envFilePath: ['.env'],
       isGlobal: true,
+    }),
+    CacheModule.registerAsync({
+      isGlobal: true,
+      imports: [ConfigModule],
+      useFactory: async (configService: ConfigService) => ({
+        store: redisStore,
+        host: configService.get('REDIS_HOST'),
+        port: configService.get('REDIS_PORT'),
+        ttl: 600,
+      }),
+      inject: [ConfigService],
     }),
     ServeStaticModule.forRoot({
       rootPath: join(__dirname, '..', 'uploads'),
@@ -57,6 +73,8 @@ import { NotificationsModule } from './notifications/notifications.module';
     AttemptsModule,
     AuthModule,
     NotificationsModule,
+    VocabulariesModule,
+    TagsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
