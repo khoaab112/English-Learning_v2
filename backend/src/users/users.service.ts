@@ -66,7 +66,7 @@ export class UsersService implements OnApplicationBootstrap {
     }
 
     queryBuilder
-      .orderBy('user.createdAt', 'DESC')
+      .orderBy('user.id', 'DESC')
       .skip(skip)
       .take(limit);
 

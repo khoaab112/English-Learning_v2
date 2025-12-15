@@ -32,7 +32,7 @@
       <div class="card-body p-0">
         <div class="table-responsive">
           <table class="table table-hover table-striped align-middle mb-0">
-            <thead class="bg-light text-muted small text-uppercase">
+            <thead class="custom-header small text-uppercase fw-bold shadow-sm">
               <tr>
                 <th class="ps-4">ID</th>
                 <th>Người Dùng</th>
@@ -80,13 +80,23 @@
                   </span>
                 </td>
                 <td>
-                    <span class="badge rounded-pill" :class="user.status === 'BLOCKED' ? 'bg-danger-subtle text-danger' : 'bg-success-subtle text-success'">
+                    <span class="badge rounded-pill" :class="user.status === 'BLOCKED' ? 'badge-blocked' : 'bg-success-subtle text-success'">
                         {{ user.status === 'BLOCKED' ? 'Đã Chặn' : 'Hoạt Động' }}
                     </span>
                 </td>
                 <td>
-                    <div class="small text-muted"><i class="far fa-clock me-1"></i> Tạo: {{ new Date(user.createdAt).toLocaleString('vi-VN') }}</div>
-                    <div class="small text-muted"><i class="fas fa-history me-1"></i> Cập nhật: {{ new Date(user.updatedAt).toLocaleString('vi-VN') }}</div>
+                    <div class="d-flex align-items-center mb-1">
+                        <span class="fw-bold text-secondary d-inline-block" style="width: 70px; font-size: 0.85rem;">
+                            <i class="far fa-clock me-1"></i> Tạo
+                        </span>
+                        <span class="small text-dark font-monospace">{{ new Date(user.createdAt).toLocaleString('vi-VN') }}</span>
+                    </div>
+                    <div class="d-flex align-items-center">
+                        <span class="fw-bold text-primary d-inline-block" style="width: 70px; font-size: 0.85rem;">
+                             <i class="fas fa-history me-1"></i> Sửa
+                        </span>
+                        <span class="small text-dark font-monospace">{{ new Date(user.updatedAt).toLocaleString('vi-VN') }}</span>
+                    </div>
                 </td>
                 <td class="text-center">
                     <div class="d-flex justify-content-center gap-2">
@@ -618,6 +628,18 @@ onMounted(() => fetchUsers(1));
 
 
 <style scoped>
+.custom-header th {
+    background-color: #666;
+    color: white;
+    border-color: #555;
+    vertical-align: middle;
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+}
+.badge-blocked {
+    background-color: #dc3545 !important;
+    color: #f8f9fa !important;
+}
 .user-cell {
   transition: all 0.2s ease;
 }
