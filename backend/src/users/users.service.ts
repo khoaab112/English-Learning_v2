@@ -1,4 +1,4 @@
-import { Injectable, OnApplicationBootstrap, ConflictException } from '@nestjs/common';
+import { Injectable, OnApplicationBootstrap, ConflictException, BadRequestException } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -48,13 +48,34 @@ export class UsersService implements OnApplicationBootstrap {
     return this.userRepository.save(user);
   }
 
-  async findAll(page: number = 1, limit: number = 10) {
-    const [data, total] = await this.userRepository.findAndCount({
-      skip: (page - 1) * limit,
-      take: limit,
-      order: { createdAt: 'DESC' }
-    });
+  async findAll(page: number = 1, limit: number = 10, search?: string) {
+    const skip = (page - 1) * limit;
+    const queryBuilder = this.userRepository.createQueryBuilder('user');
+
+    if (search) {
+      queryBuilder.where(
+        '(user.email LIKE :search OR user.fullName LIKE :search)',
+        { search: `%${search}%` },
+      );
+    }
+
+    queryBuilder
+      .orderBy('user.createdAt', 'DESC')
+      .skip(skip)
+      .take(limit);
+
+    const [data, total] = await queryBuilder.getManyAndCount();
+
     return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
+  }
+
+  async updateStatus(id: number, status: string) {
+    const user = await this.findOne(id);
+    if (!user) throw new BadRequestException('Người dùng không tồn tại.'); // Optional safety
+    if (user.role === 'ADMIN') {
+      throw new BadRequestException('Không thể chặn tài khoản Quản trị viên (Admin).');
+    }
+    return this.userRepository.update(id, { status });
   }
 
   findOne(id: number) {
@@ -72,7 +93,14 @@ export class UsersService implements OnApplicationBootstrap {
     return this.userRepository.update(id, updateUserDto);
   }
 
-  remove(id: number) {
+  async remove(id: number) {
+    const user = await this.findOne(id);
+    if (!user) {
+      throw new BadRequestException('Người dùng không tồn tại.');
+    }
+    if (user.role === 'ADMIN') {
+      throw new BadRequestException('Không thể xóa tài khoản Quản trị viên (Admin).');
+    }
     return this.userRepository.delete(id);
   }
 }

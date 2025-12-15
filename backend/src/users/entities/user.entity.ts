@@ -31,6 +31,9 @@ export class User {
     })
     role: UserRole;
 
+    @Column({ default: 'ACTIVE' }) // ACTIVE, BLOCKED
+    status: string;
+
     @OneToMany(() => Attempt, (attempt) => attempt.user)
     attempts: Attempt[];
 

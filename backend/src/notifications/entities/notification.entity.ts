@@ -4,6 +4,7 @@ import { User } from '../../users/entities/user.entity';
 export enum NotificationType {
     GLOBAL = 'GLOBAL',
     INDIVIDUAL = 'INDIVIDUAL',
+    SYSTEM = 'SYSTEM',
 }
 
 @Entity()

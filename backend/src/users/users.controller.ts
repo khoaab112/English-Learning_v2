@@ -28,8 +28,8 @@ export class UsersController {
   }
 
   @Get()
-  findAll(@Query('page') page: number = 1, @Query('limit') limit: number = 5) {
-    return this.usersService.findAll(+page, +limit);
+  findAll(@Query('page') page: number = 1, @Query('limit') limit: number = 5, @Query('search') search?: string) {
+    return this.usersService.findAll(+page, +limit, search);
   }
 
   @Get(':id')
@@ -52,6 +52,11 @@ export class UsersController {
       updateUserDto.avatar = `http://localhost:3000/uploads/avatars/${file.filename}`;
     }
     return this.usersService.update(+id, updateUserDto);
+  }
+
+  @Patch(':id/status')
+  updateStatus(@Param('id') id: string, @Body('status') status: string) {
+    return this.usersService.updateStatus(+id, status);
   }
 
   @Delete(':id')
