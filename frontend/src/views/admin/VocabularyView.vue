@@ -246,10 +246,109 @@
                 </div>
                 
                 <!-- TEMPLATE PLACEHOLDER -->
-                <div v-else-if="creationMode === 'TEMPLATE'" class="text-center py-5">
-                    <div class="text-muted mb-3"><i class="fas fa-tools fa-3x"></i></div>
-                    <h5>Tính năng đang phát triển</h5>
-                    <button class="btn btn-outline-primary mt-2" @click="creationMode = 'SELECT'">Quay lại</button>
+                <!-- TEMPLATE / SOURCE MODE -->
+                <!-- TEMPLATE / SOURCE MODE (BULK SUPPORTED) -->
+                <div v-else-if="creationMode === 'TEMPLATE'" class="px-2">
+                    <div class="row">
+                        <div class="col-md-12 mb-4">
+                            <!-- Toggle Mode -->
+                            <div class="btn-group w-100 shadow-sm mb-3">
+                                <input type="radio" class="btn-check" name="tm-mode" id="tm-single" autocomplete="off" :checked="templateSubMode === 'SINGLE'" @click="templateSubMode = 'SINGLE'">
+                                <label class="btn btn-outline-primary" for="tm-single">Tra Cứu / Thêm Lẻ</label>
+
+                                <input type="radio" class="btn-check" name="tm-mode" id="tm-bulk" autocomplete="off" :checked="templateSubMode === 'BULK'" @click="templateSubMode = 'BULK'">
+                                <label class="btn btn-outline-primary" for="tm-bulk">Thêm Hàng Loạt (Bulk)</label>
+                            </div>
+
+                            <label class="form-label fw-bold small text-muted">Loại từ</label>
+                            <select v-model="selectedSourceId" class="form-select shadow-sm" @change="onSourceChange">
+                                <option value="" disabled>-- Chọn nguồn --</option>
+                                <option v-for="source in availableSources" :key="source.id" :value="source.id">
+                                    {{ source.name }}
+                                </option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- SUB-MODE: SINGLE SEARCH -->
+                    <div v-if="templateSubMode === 'SINGLE' && selectedSourceId">
+                        <div class="input-group mb-3 shadow-sm">
+                            <span class="input-group-text bg-white border-end-0"><i class="fas fa-search text-muted"></i></span>
+                            <input v-model="sourceSearchQuery" @keyup.enter="searchSource" class="form-control border-start-0" placeholder="Nhập từ cần tìm..." />
+                            <button class="btn btn-primary px-4" @click="searchSource" :disabled="sourceLoading">Tìm Kiếm</button>
+                        </div>
+                        <div v-if="sourceResults.length > 0" class="list-group shadow-sm mb-3" style="max-height: 300px; overflow-y: auto;">
+                            <button v-for="(item, idx) in sourceResults" :key="idx" type="button" class="list-group-item list-group-item-action d-flex align-items-center p-3" @click="fillFromSource(item)">
+                                <div class="flex-grow-1">
+                                    <div class="d-flex align-items-baseline gap-2">
+                                        <span class="fw-bold fs-5 text-primary">{{ item.word }}</span>
+                                        <span class="font-monospace text-muted small">{{ item.ipa }}</span>
+                                    </div>
+                                    <small class="text-muted d-block text-truncate">{{ item.meaning || item.example }}</small>
+                                </div>
+                                <i class="fas fa-arrow-right text-muted"></i>
+                            </button>
+                        </div>
+                        <div v-else-if="hasSearched && !sourceLoading && sourceResults.length === 0" class="text-center py-4 text-muted">
+                            <p>Không tìm thấy kết quả.</p>
+                        </div>
+                    </div>
+
+                    <!-- SUB-MODE: BULK GENERATOR -->
+                    <div v-else-if="templateSubMode === 'BULK' && selectedSourceId">
+                        <div class="alert alert-info small border-0 bg-info-subtle text-info-emphasis">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Tính năng này sẽ tạo danh sách từ ngẫu nhiên từ nguồn đã chọn, lọc trùng lặp.
+                        </div>
+                        
+                        <!-- Topic Selection for Datamuse -->
+                        <div v-if="selectedSourceId === 'api-datamuse'" class="mb-3">
+                            <label class="form-label fw-bold small text-muted">Chủ đề từ vựng</label>
+                            <input type="text" v-model="customTopic" class="form-control mb-2" placeholder="Ví dụ: business, travel, technology...">
+                            
+                            <div class="d-flex flex-wrap gap-1">
+                                <span v-for="topic in predefinedTopics" :key="topic" 
+                                    class="badge cursor-pointer border user-select-none"
+                                    :class="customTopic === topic ? 'bg-primary text-white' : 'bg-white text-secondary'"
+                                    @click="customTopic = topic">
+                                    {{ topic }}
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small text-muted">Số lượng từ muốn tạo</label>
+                            <div class="d-flex gap-2 align-items-center">
+                                <div class="btn-group">
+                                    <button v-for="qty in [10, 20, 50, 100]" :key="qty" 
+                                        class="btn border"
+                                        :class="bulkQuantity === qty ? 'btn-primary' : 'btn-light text-muted'"
+                                        @click="bulkQuantity = qty">
+                                        {{ qty }}
+                                    </button>
+                                </div>
+                                
+                                <select v-model="bulkLevel" class="form-select w-auto shadow-sm" style="min-width: 120px;">
+                                    <option value="">Ngẫu nhiên</option>
+                                    <option value="A1">Level A1</option>
+                                    <option value="A2">Level A2</option>
+                                    <option value="B1">Level B1</option>
+                                    <option value="B2">Level B2</option>
+                                    <option value="C1">Level C1</option>
+                                    <option value="C2">Level C2</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <button class="btn btn-primary w-100 shadow-sm py-2" @click="executeBulkImport" :disabled="sourceLoading">
+                            <span v-if="sourceLoading" class="spinner-border spinner-border-sm me-1"></span>
+                            Bắt đầu Nhập Kho (Direct Import)
+                        </button>
+
+                        <div class="mt-3 text-muted small fst-italic">
+                            <i class="fas fa-info-circle me-1"></i> Lưu ý: Quá trình này sẽ chạy ngầm tại server để tiết kiệm tài nguyên.
+                        </div>
+                    </div>
                 </div>
 
                 <!-- MANUAL FORM (Key Existing Logic) -->
@@ -438,6 +537,7 @@ const tagForm = ref<Tag>({ name: '', note: '' });
 
 import { useAuthStore } from '../../stores/auth';
 import { useToastStore } from '../../stores/toast';
+import api from '../../services/api';
 
 const authStore = useAuthStore();
 const toastStore = useToastStore();
@@ -458,19 +558,189 @@ const getTagColor = (id?: number) => {
     return tagColors[id % tagColors.length];
 };
 
+import { useConfirmStore } from '../../stores/confirm';
+const confirmStore = useConfirmStore();
+
 // ...
 
 // Fetch method for tags
 const fetchTags = async () => {
     try {
-        const response = await axios.get(`${API_URL}/tags`, {
-             headers: { Authorization: `Bearer ${authStore.token}` }
-        });
+        const response = await api.get('/tags');
         allTags.value = response.data;
     } catch (e) {
         console.error("Failed to fetch tags", e);
     }
 };
+
+
+
+// --- SOURCE / TEMPLATE LOGIC ---
+interface ExternalSource {
+    id: string;
+    name: string; 
+    type: string;
+}
+interface ExternalWord {
+    word: string;
+    ipa?: string;
+    meaning?: string;
+    type?: string;
+    example?: string;
+    audioUrl?: string;
+    imageUrl?: string;
+    source: string;
+    level?: string;
+    exampleMeaning?: string; // New field
+}
+
+const availableSources = ref<ExternalSource[]>([]);
+const selectedSourceId = ref('');
+const sourceSearchQuery = ref('');
+const sourceResults = ref<ExternalWord[]>([]);
+const sourceLoading = ref(false);
+const hasSearched = ref(false);
+
+const fetchSources = async () => {
+    try {
+        const { data } = await axios.get(`${API_URL}/sources`);
+        availableSources.value = data;
+    } catch (e) {
+        console.error("Failed to fetch sources", e);
+    }
+};
+
+const onSourceChange = () => {
+    sourceResults.value = [];
+    hasSearched.value = false;
+    sourceSearchQuery.value = '';
+    // If it's a collection, maybe auto-fetch all? For now, let user search (filtering).
+    if (selectedSourceId.value.startsWith('collection')) {
+         // Auto search empty to show all
+         searchSource();
+    }
+};
+
+const searchSource = async () => {
+    if (!selectedSourceId.value) return;
+    sourceLoading.value = true;
+    hasSearched.value = true;
+    try {
+        const { data } = await axios.get(`${API_URL}/sources/search`, {
+            params: { sourceId: selectedSourceId.value, q: sourceSearchQuery.value }
+        });
+        sourceResults.value = data;
+    } catch (e) {
+        toastStore.error("Lỗi khi tìm kiếm từ nguồn này");
+    } finally {
+        sourceLoading.value = false;
+    }
+};
+
+const fillFromSource = (item: ExternalWord) => {
+    // Map ExternalWord to Form
+    form.value = {
+        word: item.word,
+        ipa: item.ipa || '',
+        meaning: item.meaning || '', // Might be empty for English sources
+        type: item.type || 'n',
+        level: 'A1', // Default
+        example: item.example || '',
+        exampleMeaning: '',
+        audioUrl: item.audioUrl || '',
+        imageUrl: item.imageUrl || '',
+        usageNote: '',
+        collocation: '',
+        tags: [],
+        popularity: 0
+    };
+
+    // Switch to Manual Mode for review
+    creationMode.value = 'MANUAL';
+    toastStore.info("Đã điền thông tin. Vui lòng bổ sung nghĩa Tiếng Việt nếu thiếu.");
+};
+
+// --- BULK LOGIC ---
+const templateSubMode = ref<'SINGLE' | 'BULK'>('SINGLE');
+const bulkQuantity = ref(10);
+const bulkLevel = ref(''); // New Level Filter
+// const bulkSelectedTags = ref<number[]>([]); // Removed: Unused
+// const bulkPreviewList = ref<ExternalWord[]>([]); // Removed: Unused
+
+const predefinedTopics = [
+    'Business', 'Technology', 'Travel', 'Food', 
+    'Education', 'Health', 'Sports', 'Art', 
+    'Music', 'Nature', 'Emotion', 'Family'
+];
+
+// Computed to check if bulk is supported (simple check based on ID convention or Type)
+import { computed } from 'vue';
+const isBulkSupported = computed(() => {
+    if (!selectedSourceId.value) return false;
+    const source = availableSources.value.find(s => s.id === selectedSourceId.value);
+    return source?.type === 'COLLECTION' || source?.id === 'api-datamuse';
+});
+
+const customTopic = ref(''); // For Datamuse topic input
+
+// Watch source change to reset mode if not supported
+watch(selectedSourceId, () => {
+    if (!isBulkSupported.value && templateSubMode.value === 'BULK') {
+        templateSubMode.value = 'SINGLE';
+    }
+});
+
+// Direct Import Execution
+const executeBulkImport = async () => {
+    if (!selectedSourceId.value) return;
+    
+    // Validation
+    const quantity = parseInt(String(bulkQuantity.value));
+    if (isNaN(quantity) || quantity <= 0 || quantity > 100) {
+       toastStore.error("Số lượng phải từ 1 đến 100");
+       return;
+    }
+    
+    if (selectedSourceId.value === 'api-datamuse' && !customTopic.value.trim()) {
+        toastStore.warning("Vui lòng nhập chủ đề!");
+        return;
+    }
+
+    const isConfirmed = await confirmStore.show({
+        title: 'Xác nhận Nhập Kho',
+        message: `Hệ thống sẽ tìm và nhập ${quantity} từ vựng về chủ đề "${customTopic.value || 'General'}" trực tiếp vào kho.\nQuá trình này có thể mất vài giây.`,
+        confirmText: 'Bắt đầu Nhập'
+    });
+    
+    if (!isConfirmed) return;
+
+    sourceLoading.value = true;
+    try {
+        const { data } = await axios.post(`${API_URL}/sources/bulk-import`, {
+            sourceId: selectedSourceId.value,
+            count: quantity,
+            level: bulkLevel.value,
+            topic: customTopic.value
+        }, { headers: { Authorization: `Bearer ${authStore.token}` } });
+
+        if (data.success) {
+            toastStore.success(data.message);
+            // Close modal
+            if (modalInstance) modalInstance.hide();
+            // Refresh list
+            fetchWords();
+        } else {
+             toastStore.warning(data.message || "Không nhập được từ nào.");
+        }
+    } catch (e) {
+        toastStore.error("Lỗi khi nhập dữ liệu. Vui lòng thử lại.");
+        console.error(e);
+    } finally {
+        sourceLoading.value = false;
+    }
+};
+
+
 
 const saveTag = async () => {
     if(!tagForm.value.name) {
@@ -666,6 +936,8 @@ const getLevelBadgeClass = (level: string) => {
 onMounted(() => {
     fetchWords();
     fetchTags();
+    fetchTags();
+    fetchSources();
 });
 </script>
 

@@ -20,7 +20,7 @@ export class Vocabulary {
     @Column({ nullable: true })
     ipa: string;
 
-    @Column()
+    @Column({ type: 'text' })
     meaning: string;
 
     @Column({ nullable: true })

@@ -13,6 +13,12 @@ export class VocabulariesController {
         return this.vocabulariesService.create(createVocabularyDto);
     }
 
+    @Post('bulk')
+    @UseGuards(JwtAuthGuard)
+    createBulk(@Body() createVocabularyDtos: Partial<Vocabulary>[]) {
+        return this.vocabulariesService.createBulk(createVocabularyDtos);
+    }
+
     @Get()
     findAll(
         @Query('page') page: number = 1,

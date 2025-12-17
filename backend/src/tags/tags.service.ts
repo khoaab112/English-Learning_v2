@@ -36,4 +36,8 @@ export class TagsService {
     remove(id: number) {
         return this.tagsRepository.delete(id);
     }
+
+    findByName(name: string) {
+        return this.tagsRepository.findOne({ where: { name } });
+    }
 }

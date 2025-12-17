@@ -14,6 +14,7 @@ import { VocabulariesModule } from './vocabularies/vocabularies.module';
 import { TagsModule } from './tags/tags.module';
 
 import { CacheModule } from '@nestjs/cache-manager';
+import { SourcesModule } from './sources/sources.module';
 import * as redisStore from 'cache-manager-redis-store';
 
 @Module({
@@ -75,6 +76,7 @@ import * as redisStore from 'cache-manager-redis-store';
     NotificationsModule,
     VocabulariesModule,
     TagsModule,
+    SourcesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

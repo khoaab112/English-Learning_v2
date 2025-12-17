@@ -15,6 +15,25 @@ export class VocabulariesService {
         return this.vocabularyRepository.save(newVocab);
     }
 
+    async createBulk(createVocabularyDtos: Partial<Vocabulary>[]): Promise<{ created: number, skipped: number }> {
+        let created = 0;
+        let skipped = 0;
+
+        for (const dto of createVocabularyDtos) {
+            // Check existence
+            const existing = await this.vocabularyRepository.findOne({ where: { word: dto.word } });
+            if (existing) {
+                skipped++;
+                continue;
+            }
+            // Save
+            const newVocab = this.vocabularyRepository.create(dto);
+            await this.vocabularyRepository.save(newVocab);
+            created++;
+        }
+        return { created, skipped };
+    }
+
     async findAll(page: number = 1, limit: number = 10, search: string = '', type?: string, level?: string): Promise<{ data: Vocabulary[], total: number, page: number, totalPages: number }> {
         const skip = (page - 1) * limit;
 
